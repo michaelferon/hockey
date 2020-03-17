@@ -72,7 +72,9 @@ test <- apply(df, 2, function(x) mean(is.na(x)))
 test <- test[test > 0] # Proportion of NAs in certain features.
 
 df <- df %>% na.omit
-X <- df %>% # X holds all the strictly numeric features.
-  select(-c('Player', 'Season', 'Team', 'S/C', 'Pos', 'DOB', 'Birth City',
+X <- df %>% # X holds all the strictly numeric features (plus Season).
+  select(-c('Player', 'Team', 'S/C', 'Pos', 'DOB', 'Birth City',
             'Ctry', 'Ntnlty', '1st Season', 'HOF'))
+
+save(df, X, file = '../data/data.Rdata')
 
