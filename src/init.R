@@ -16,18 +16,22 @@ files <- c('../data/clean/summary.csv',
            '../data/clean/pp.csv')
 
 
-df <- read_csv(files[1], na = '--', col_types = cols('TOI/GP' = col_character())) %>%
-  arrange(Player, Season, Team)
+df <- read_csv(files[1], na = c('--', '', 'NA'),
+               col_types = cols('TOI/GP' = col_character())) %>%
+      arrange(Player, Season, Team)
 for (file in files[-1]) {
-  temp <- read_csv(file, na = '--', col_types = cols('TOI/GP' = col_character())) %>%
-    arrange(Player, Season, Team) %>%
-    .[, !(colnames(.) %in% colnames(df))]
+  temp <- read_csv(file, na = c('--', '', 'NA'),
+                   col_types = cols('TOI/GP' = col_character())) %>%
+          arrange(Player, Season, Team) %>%
+          .[, !(colnames(.) %in% colnames(df))]
   df <- df %>% bind_cols(temp)
 }
-
-bio <- read_csv('../data/clean/bio.csv')
-
+rm(file, files, temp)
 
 
+bio <- read_csv('../data/clean/bio.csv', na = c('--', '', 'NA')) %>%
+       arrange(Player, Team) %>%
+       .[, !(colnames(.) %in% colnames(df)) |
+             colnames(.) %in% c('Player', 'Team', 'S/C', 'Pos')]
 
-
+df <- df %>% inner_join(bio, by = c('Player', 'Team', 'S/C', 'Pos'))
