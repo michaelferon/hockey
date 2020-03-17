@@ -47,21 +47,18 @@ df <- df %>% left_join(bio, by = c('Player'))
 rm(doubleNames, bio)
 
 
-
-# A bunch of necessary manipulation.
+# Function to convert time strings to seconds.
+str2sec <- function(x) {
+  sapply(strsplit(x, ':'), function(y) as.numeric(y) %*% c(60, 1))
+}
+# A few necessary transformations.
 df <- df %>%
-  mutate(Season = as.character(Season), # Change season to first year, as char.
-         Season = str_sub(Season, 1, 4)) %>%
-  mutate(`1st Season` = as.character(`1st Season`), # Same thing here.
-         `1st Season` = str_sub(`1st Season`, 1, 4)) %>%
-  mutate(`Draft Yr` = as.character(`Draft Yr`)) %>% # Change to char.
-  mutate(`TOI/GP` = sapply(strsplit(df$`TOI/GP`, ':'), # char -> seconds.
-                           function(y) sum(as.numeric(y) * c(60, 1)))) %>%
-  # All these below convert Time to seconds.
-  mutate(`PP TOI/GP` = 60*hour(`PP TOI/GP`) + minute(`PP TOI/GP`)) %>%
-  mutate(`SH TOI/GP` = 60*hour(`SH TOI/GP`) + minute(`SH TOI/GP`)) %>%
-  mutate(`EV TOI/GP` = 60*hour(`EV TOI/GP`) + minute(`EV TOI/GP`)) %>%
-  mutate(`PIM/GP` = 60*hour(`PIM/GP`) + minute(`PIM/GP`))
+  mutate(`Draft Yr` = as.character(`Draft Yr`)) %>%
+  mutate_at(c('Season', '1st Season'),
+            function(x) str_sub(as.character(x), 1, 4)) %>%
+  mutate_at(c('TOI/GP', 'SH TOI', 'PP TOI'), str2sec) %>%
+  mutate_at(c('PP TOI/GP', 'SH TOI/GP', 'EV TOI/GP', 'PIM/GP'),
+            function(x) 60*hour(x) + minute(x))
 
 
 
@@ -73,4 +70,9 @@ df <- df %>%
 
 test <- apply(df, 2, function(x) mean(is.na(x)))
 test <- test[test > 0] # Proportion of NAs in certain features.
+
+df <- df %>% na.omit
+X <- df %>% # X holds all the strictly numeric features.
+  select(-c('Player', 'Season', 'Team', 'S/C', 'Pos', 'DOB', 'Birth City',
+            'Ctry', 'Ntnlty', '1st Season', 'HOF'))
 
