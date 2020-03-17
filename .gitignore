@@ -6,4 +6,4 @@
 *.Rdata
 *.csv
 *.xlsx
-!features.csv
+!data/clean/*.csv
