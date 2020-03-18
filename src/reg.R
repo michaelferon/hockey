@@ -9,10 +9,14 @@ library(lubridate)
 
 # Load `df` and `ds`.
 load('../data/data.Rdata')
-
-## INFO
 # df -- this is the complete dataset, unstandardized.
 # ds -- same as df, but standardized.
+
+
+
+# X is all the quantitative data.
+X <- df %>% select(-c(1:11))
+model <- lm(P ~ ., data = X)
 
 
 
