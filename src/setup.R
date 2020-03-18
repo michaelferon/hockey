@@ -7,7 +7,7 @@ library(ggplot2)
 library(lubridate)
 
 # Load `df` and `X` data objects.
-load('../data/data.Rdata')
+load('../data/dataFull.Rdata')
 
 
 
@@ -22,4 +22,15 @@ for (i in 1:10) {
   X[X$Season == i+2008, -1] <- sweep(X[X$Season == i+2008, -1], 2, s, '/')
 }
 X <- X %>% ungroup
+
+ds <- df %>%
+  .[, !(names(.) %in% names(X))] %>%
+  bind_cols(X)
+
+df <- df %>%
+  .[, names(ds)]
+
+rm(i, m, s, X, X.mean, X.sd)
+
+save(list = ls(), file = '../data/data.Rdata')
 

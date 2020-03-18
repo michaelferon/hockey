@@ -76,5 +76,5 @@ X <- df %>% # X holds all the strictly numeric features (plus Season).
   select(-c('Player', 'Team', 'S/C', 'Pos', 'DOB', 'Birth City',
             'Ctry', 'Ntnlty', '1st Season', 'HOF'))
 
-save(df, X, file = '../data/data.Rdata')
+save(df, X, file = '../data/dataFull.Rdata')
 
