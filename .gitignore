@@ -7,4 +7,5 @@
 *.xlsx
 !data/clean/*.csv
 
+.Rdata
 .Rhistory
