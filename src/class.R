@@ -32,10 +32,11 @@ del <- c(del, '+/-', 'GP', 'GWG', 'OTG', '1g', 'SH iSAT', 'SH iSAT/60',
 
 dc <- df %>%
   .[, !(names(df) %in% dep)] %>%
-  dplyr::select(-c(1:3, 5:7, 9:11)) %>%
+  dplyr::select(-c(1:2, 5:7, 9:11)) %>%
   as.data.frame
 dc$Pos <- as.factor(dc$Pos)
 dc$Ntnlty <- as.factor(dc$Ntnlty)
+dc$`S/C` <- as.factor(dc$`S/C`)
 
 
 ## Position LDA
@@ -43,6 +44,7 @@ set.seed(1)
 k <- 10
 n <- dim(dc)[1]
 p <- dim(dc)[2]
+start <- 4
 fold <- sample(k, n, replace = TRUE)
 
 g.pos <- length(unique(dc$Pos))
@@ -50,9 +52,9 @@ prior.pos <- as.numeric(tapply(dc$Pos, dc$Pos, function(x) length(x) / n))
 confuse.pos.lda <- matrix(rep(0, g.pos^2), nrow = g.pos)
 
 for (i in 1:k) {
-  zcv <- lda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, 3:p],
+  zcv <- lda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, start:p],
              prior = prior.pos)
-  ppcv <- predict(zcv, dc[fold == i, 3:p])
+  ppcv <- predict(zcv, dc[fold == i, start:p])
   confuse.pos.lda <- confuse.pos.lda + table(dc[fold == i, 'Pos'], ppcv$class)
 }
 rate.pos.lda <- 1 - sum(diag(confuse.pos.lda)) / sum(confuse.pos.lda)
@@ -61,9 +63,9 @@ rate.pos.lda <- 1 - sum(diag(confuse.pos.lda)) / sum(confuse.pos.lda)
 confuse.pos.qda <- matrix(rep(0, g.pos^2), nrow = g.pos)
 
 for (i in 1:k) {
-  zcv <- qda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, 3:p],
+  zcv <- qda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, start:p],
              prior = prior.pos)
-  ppcv <- predict(zcv, dc[fold == i, 3:p])
+  ppcv <- predict(zcv, dc[fold == i, start:p])
   confuse.pos.qda <- confuse.pos.qda + table(dc[fold == i, 'Pos'], ppcv$class)
 }
 rate.pos.qda <- 1 - sum(diag(confuse.pos.qda)) / sum(confuse.pos.qda)
@@ -76,9 +78,9 @@ prior.nty <- tapply(dc$Ntnlty, dc$Ntnlty, function(x) length(x) / n) %>%
 confuse.nty.lda <- matrix(rep(0, g.nty^2), nrow = g.nty)
 
 for (i in 1:k) {
-  zcv <- lda(dc[fold != i, 'Ntnlty'] ~ ., dc[fold != i, 3:p],
+  zcv <- lda(dc[fold != i, 'Ntnlty'] ~ ., dc[fold != i, start:p],
              prior = prior.nty)
-  ppcv <- predict(zcv, dc[fold == i, 3:p])
+  ppcv <- predict(zcv, dc[fold == i, start:p])
   confuse.nty.lda <- confuse.nty.lda + table(dc[fold == i, 'Ntnlty'],
                                              ppcv$class)
 }
@@ -86,7 +88,31 @@ rate.nty.lda <- 1 - sum(diag(confuse.nty.lda)) / sum(confuse.nty.lda)
 
 
 
+## Shoots/Catches LDA
+g.sc <- length(unique(dc$`S/C`))
+prior.sc <- tapply(dc$`S/C`, dc$`S/C`, function(x) length(x) / n) %>%
+            as.numeric
+confuse.sc.lda <- matrix(rep(0, g.sc^2), nrow = g.sc)
 
+for (i in 1:k) {
+  zcv <- lda(dc[fold != i, 'S/C'] ~ ., dc[fold != i, start:p],
+             prior = prior.sc)
+  ppcv <- predict(zcv, dc[fold == i, start:p])
+  confuse.sc.lda <- confuse.sc.lda + table(dc[fold == i, 'S/C'], ppcv$class)
+}
+rate.sc.lda <- 1 - sum(diag(confuse.sc.lda)) / sum(confuse.sc.lda)
+
+
+## Shoots/Catches QDA
+confuse.sc.qda <- matrix(rep(0, g.sc^2), nrow = g.sc)
+
+for (i in 1:k) {
+  zcv <- qda(dc[fold != i, 'S/C'] ~ ., dc[fold != i, start:p],
+             prior = prior.sc)
+  ppcv <- predict(zcv, dc[fold == i, start:p])
+  confuse.sc.qda <- confuse.sc.qda + table(dc[fold == i, 'S/C'], ppcv$class)
+}
+rate.sc.qda <- 1 - sum(diag(confuse.sc.qda)) / sum(confuse.sc.qda)
 
 
 
