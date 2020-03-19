@@ -6,3 +6,5 @@
 *.csv
 *.xlsx
 !data/clean/*.csv
+
+.Rhistory

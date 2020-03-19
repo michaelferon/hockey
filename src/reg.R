@@ -13,10 +13,13 @@ load('../data/data.Rdata')
 # ds -- same as df, but standardized.
 
 
-
 # X is all the quantitative data.
 X <- df %>% select(-c(1:11))
 model <- lm(P ~ ., data = X)
+
+predictPoints <- X %>% select(c(`P`,`GP`,`+/-`, `S`,`TOI/GP`, `PP TOI/GP`)) 
+
+
 
 
 
