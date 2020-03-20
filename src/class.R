@@ -10,6 +10,7 @@ library(MASS)
 
 # Load `df` and `ds`.
 load('../data/data.Rdata')
+load('../data/bio.Rdata')
 
 ## INFO
 # df -- this is the complete dataset, unstandardized.
@@ -39,81 +40,60 @@ dc$Ntnlty <- as.factor(dc$Ntnlty)
 dc$`S/C` <- as.factor(dc$`S/C`)
 
 
-## Position LDA
-set.seed(1)
-k <- 10
-n <- dim(dc)[1]
-p <- dim(dc)[2]
-start <- 4
-fold <- sample(k, n, replace = TRUE)
-
-g.pos <- length(unique(dc$Pos))
-prior.pos <- as.numeric(tapply(dc$Pos, dc$Pos, function(x) length(x) / n))
-confuse.pos.lda <- matrix(rep(0, g.pos^2), nrow = g.pos)
-
-for (i in 1:k) {
-  zcv <- lda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, start:p],
-             prior = prior.pos)
-  ppcv <- predict(zcv, dc[fold == i, start:p])
-  confuse.pos.lda <- confuse.pos.lda + table(dc[fold == i, 'Pos'], ppcv$class)
+my.da <- function(data, var, type = 'lda', prior = NULL) {
+  set.seed(1)
+  k <- 10
+  n <- dim(dc)[1]
+  p <- dim(dc)[2]
+  start <- 4
+  fold <- sample(k, n, replace = TRUE)
+  
+  g <- length(unique(data[[var]]))
+  confuse <- matrix(rep(0, g^2), nrow = g)
+  if (is.null(prior)) {
+    prior <- tapply(data[[var]], data[[var]], function(x) length(x) / n) %>%
+             as.numeric
+  }
+  
+  for (i in 1:k) {
+    if (type == 'lda') {
+      zcv <- lda(data[fold != i, var]~., data[fold != i, start:p],
+                 prior = prior)
+    } else if (type == 'qda') {
+      zcv <- qda(data[fold != i, var]~., data[fold != i, start:p],
+                 prior = prior)
+    } else {
+      stop('Invalid type.')
+    }
+    ppcv <- predict(zcv, data[fold == i, start:p])
+    confuse <- confuse + table(data[fold == i, var], ppcv$class)
+  }
+  rate <- 1 - sum(diag(confuse)) / sum(confuse)
+  rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
+  
+  return(list(confuse = confuse, rate = rate, rates = rates))
 }
-rate.pos.lda <- 1 - sum(diag(confuse.pos.lda)) / sum(confuse.pos.lda)
-
-## Position QDA
-confuse.pos.qda <- matrix(rep(0, g.pos^2), nrow = g.pos)
-
-for (i in 1:k) {
-  zcv <- qda(dc[fold != i, 'Pos'] ~ ., dc[fold != i, start:p],
-             prior = prior.pos)
-  ppcv <- predict(zcv, dc[fold == i, start:p])
-  confuse.pos.qda <- confuse.pos.qda + table(dc[fold == i, 'Pos'], ppcv$class)
-}
-rate.pos.qda <- 1 - sum(diag(confuse.pos.qda)) / sum(confuse.pos.qda)
 
 
-## Nationality LDA
-g.nty <- length(unique(dc$Ntnlty))
-prior.nty <- tapply(dc$Ntnlty, dc$Ntnlty, function(x) length(x) / n) %>%
-                as.numeric
-confuse.nty.lda <- matrix(rep(0, g.nty^2), nrow = g.nty)
+## Position
+pos.lda <- my.da(dc, 'Pos', type = 'lda')
+pos.qda <- my.da(dc, 'Pos', type = 'qda')
 
-for (i in 1:k) {
-  zcv <- lda(dc[fold != i, 'Ntnlty'] ~ ., dc[fold != i, start:p],
-             prior = prior.nty)
-  ppcv <- predict(zcv, dc[fold == i, start:p])
-  confuse.nty.lda <- confuse.nty.lda + table(dc[fold == i, 'Ntnlty'],
-                                             ppcv$class)
-}
-rate.nty.lda <- 1 - sum(diag(confuse.nty.lda)) / sum(confuse.nty.lda)
+temp.dc <- dc %>% mutate(Pos = as.character(Pos))
+temp.dc$Pos[temp.dc$Pos == 'L' | temp.dc$Pos == 'R'] <- 'F'
+temp.dc$Pos <- as.factor(temp.dc$Pos)
+
+pos.lda.adj <- my.da(temp.dc, 'Pos', type = 'lda')
+pos.qda.adj <- my.da(temp.dc, 'Pos', type = 'qda')
 
 
-
-## Shoots/Catches LDA
-g.sc <- length(unique(dc$`S/C`))
-prior.sc <- tapply(dc$`S/C`, dc$`S/C`, function(x) length(x) / n) %>%
-            as.numeric
-confuse.sc.lda <- matrix(rep(0, g.sc^2), nrow = g.sc)
-
-for (i in 1:k) {
-  zcv <- lda(dc[fold != i, 'S/C'] ~ ., dc[fold != i, start:p],
-             prior = prior.sc)
-  ppcv <- predict(zcv, dc[fold == i, start:p])
-  confuse.sc.lda <- confuse.sc.lda + table(dc[fold == i, 'S/C'], ppcv$class)
-}
-rate.sc.lda <- 1 - sum(diag(confuse.sc.lda)) / sum(confuse.sc.lda)
+## Nationality
+nty.lda <- my.da(dc, 'Ntnlty', type = 'lda')
 
 
-## Shoots/Catches QDA
-confuse.sc.qda <- matrix(rep(0, g.sc^2), nrow = g.sc)
-
-for (i in 1:k) {
-  zcv <- qda(dc[fold != i, 'S/C'] ~ ., dc[fold != i, start:p],
-             prior = prior.sc)
-  ppcv <- predict(zcv, dc[fold == i, start:p])
-  confuse.sc.qda <- confuse.sc.qda + table(dc[fold == i, 'S/C'], ppcv$class)
-}
-rate.sc.qda <- 1 - sum(diag(confuse.sc.qda)) / sum(confuse.sc.qda)
-
+## Shoots/Catches
+sc.lda <- my.da(dc, 'S/C', type = 'lda')
+sc.qda <- my.da(dc, 'S/C', type = 'qda')
 
 
 
