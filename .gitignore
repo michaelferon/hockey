@@ -6,6 +6,9 @@
 *.csv
 *.xlsx
 !data/clean/*.csv
+!data/class-subset-vars.csv
+!data/class-subset-data.csv
 
 .Rdata
 .Rhistory
+
