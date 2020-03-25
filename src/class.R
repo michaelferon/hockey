@@ -6,6 +6,7 @@ rm( list = ls() )
 library(ggplot2)
 library(lubridate)
 library(MASS)
+library(nnet)
 library(dplyr)
 
 # Load `df` and `ds`.
@@ -20,16 +21,6 @@ load('../data/bio.Rdata')
 dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
          'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
          'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2')
-del <- c('P', 'P/GP', 'EVG', 'EVP', 'PPG', 'PPP', 'SHG', 'SHP', 'S', 'S%', 'FO',
-         'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL', 'OZ FO', 'NZ FO',
-         'DZ FO', 'On-Ice PP GF', 'On-Ice SH GF', 'On-Ice EV GF',
-         'On-Ice EV GD', 'On-Ice EV GF%', 'ENG', 'ENP', 'MsS', 'MsS Wide',
-         'MsS Over', 'MsS Post', 'MsS Cross', 'Net Pen', 'Net Pen/60', 'G Msct',
-         'SHA1', 'SHA2', 'SH Shots', 'SH S%', 'SHG/60', 'SHA1/60', 'SHA2/60',
-         'SHP/60', 'SH S/60', 'PPA1', 'PPA2', 'PP Shots', 'PP S%', 'PPG/60',
-         'PPA1/60', 'PPA2/60', 'PPP/60', 'PP S/60', 'PP GF/60')
-del <- c(del, '+/-', 'GP', 'GWG', 'OTG', '1g', 'SH iSAT', 'SH iSAT/60',
-         'PP iSAT', 'PP iSAT/60')
 
 dc <- df %>%
   .[, !(names(df) %in% dep)] %>%
@@ -40,11 +31,12 @@ dc$Ntnlty <- as.factor(dc$Ntnlty)
 dc$`S/C` <- as.factor(dc$`S/C`)
 
 
+### DISCRIMINANT ANALYSIS
 my.da <- function(data, var, type = 'lda', priors = NULL) {
   set.seed(1)
   k <- 10
-  n <- dim(data)[1]
-  p <- dim(data)[2]
+  n <- nrow(data)
+  p <- ncol(data)
   fold <- sample(k, n, replace = TRUE)
   
   g <- length(unique(data[[var]]))
@@ -97,3 +89,41 @@ nty.lda <- dc %>% select(-c('Pos', 'S/C')) %>% my.da('Ntnlty', 'lda')
 ## Shoots/Catches
 sc.lda <- dc %>% select(-c('Pos', 'Ntnlty')) %>% my.da('S/C', 'lda')
 sc.qda <- dc %>% select(-c('Pos', 'Ntnlty')) %>% my.da('S/C', 'qda')
+
+
+
+
+### LOGISTIC REGRESSION
+my.log <- function(data, var) {
+  set.seed(1)
+  k <- 10
+  n <- nrow(data)
+  p <- ncol(data)
+  fold <- sample(k, n, replace = TRUE)
+  
+  g <- length(unique(data[[var]]))
+  confuse <- matrix(rep(0, g^2), nrow = g)
+  
+  for (i in 1:k) {
+    lr <- multinom(data[fold != i, var] ~ ., data[fold != i, 2:p],
+                   trace = FALSE) %>% summary
+    logodds <- (lr$coefficients[, 1] + lr$coefficients[, 2:p] %*%
+      (data[fold == i, -1] %>% as.matrix %>% t)) %>%
+      t %>% cbind(0, .)
+    class <- apply(logodds, 1, which.max)
+    confuse <- confuse + table(data[fold == i, var], class)
+  }
+  rate <- 1 - sum(diag(confuse)) / sum(confuse)
+  rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
+  
+  return(list(confuse = confuse, rate = rate, rates = rates))
+}
+
+
+## Position
+pos.log <- dc %>% select(-c('S/C', 'Ntnlty')) %>% my.log('Pos')
+pos.log.adj <- temp.dc %>% select(-c('S/C', 'Ntnlty')) %>% my.log('Pos')
+
+
+
+
