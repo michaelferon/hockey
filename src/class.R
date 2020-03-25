@@ -125,5 +125,28 @@ pos.log <- dc %>% select(-c('S/C', 'Ntnlty')) %>% my.log('Pos')
 pos.log.adj <- temp.dc %>% select(-c('S/C', 'Ntnlty')) %>% my.log('Pos')
 
 
+## Shoots/Catches
+my.log.sc <- function(data) {
+  set.seed(1)
+  k <- 10
+  n <- nrow(data)
+  p <- ncol(data)
+  fold <- sample(k, n, replace = TRUE)
+  
+  confuse <- matrix(rep(0, 4), nrow = 2)
+  for(i in 1:k) {
+    model <- data %>% .[fold != i, ] %>%
+      glm(`S/C` ~ ., data = ., family = binomial)
+    logit <- model$coefficients[1] + model$coefficients[-1] %*%
+      (data %>% select(-1) %>% .[fold == i, ] %>% as.matrix %>% t) %>%
+      as.numeric
+    confuse <- confuse + table(dc$`S/C`[fold == i], logit >= 0)
+  }
+  rate <- 1 - sum(diag(confuse)) / sum(confuse)
+  rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
+  colnames(confuse) <- c('L', 'R')
+  
+  return(list(confuse = confuse, rate = rate, rates = rates))
+}
 
-
+sc.log <- dc %>% select(-c('Pos', 'Ntnlty')) %>% my.log.sc
