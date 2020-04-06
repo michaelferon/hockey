@@ -150,3 +150,8 @@ my.log.sc <- function(data) {
 }
 
 sc.log <- dc %>% select(-c('Pos', 'Ntnlty')) %>% my.log.sc
+
+save(nty.lda, pos.lda, pos.lda.adj, pos.lda.sub, pos.log, pos.log.adj,
+     pos.qda, pos.qda.adj, sc.lda, sc.log, sc.qda, file = '../data/class.Rdata')
+
+
