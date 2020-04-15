@@ -19,12 +19,15 @@ dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
          'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
          'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2', 'EVG', 'PPG', 'OTG',
          'GWG', 'On-Ice PP GF', 'On-Ice SH GF', 'On-Ice EV GF', 'On-Ice EV GF%',
-         'ENG', '1g', 'SHG/60', 'PPG/60', 'PP GF/60')
+         'ENG', '1g', 'SHG/60', 'PPG/60', 'PP GF/60', 'P/GP', 'EVP', 'PPP', 'S',
+         'S%', 'MsS', 'MsS Wide', 'MsS Over', 'MsS Post', 'MsS Cross', 'SHP/60',
+         'PP Shots', 'PP S%', 'PP S/60')
 
 X.ind <- X %>% select(-all_of(dep))
+num.features <- length(names(X.ind))-1
 
 # forward selection performed works for 90 even with dependencies *doublecheck later*
-step.forward <- regsubsets( G~., data=X.ind, method="forward", nvmax = 78)
+step.forward <- regsubsets( G~., data=X.ind, method="forward", nvmax = num.features)
 step.forward.sum <- summary(step.forward)
 
 # formulas for determining best model with many variables
@@ -45,12 +48,12 @@ names(best.cp)[1] <- "value"
 set.seed(1)
 k = 10
 folds = sample(1:k, nrow(X.ind), replace=TRUE)
-cv.errors = matrix(NA, k, 77, dimnames=list(NULL,c(1:77)))
+cv.errors = matrix(NA, k, num.features, dimnames=list(NULL,c(1:num.features)))
 
 for (j in 1:k){
-  best.fit = regsubsets(G ~., data=X.ind[folds!=j,], nvmax=77,method="forward")
+  best.fit = regsubsets(G ~., data=X.ind[folds!=j,], nvmax=num.features,method="forward")
   testmat = model.matrix(G ~., data = X.ind[folds==j,])
-  for (i in 1:77){
+  for (i in 1:num.features){
     coefi = coef(best.fit, id=i)
     xvars = names(coefi)
     pred = testmat[,xvars]%*%coefi
