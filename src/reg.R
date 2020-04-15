@@ -1,7 +1,6 @@
 rm( list = ls() )
 
 # Make sure you're in the 'src' directory.
-setwd("~/Desktop/hockey/src")
 # REGRESSION ANALYSIS
 
 library(tidyverse)
@@ -16,16 +15,21 @@ load('../data/data.Rdata')
 
 # X is all the quantitative data.
 X <- df %>% select( -c(1:11) ) 
+dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
+         'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
+         'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2', 'EVG', 'PPG', 'OTG',
+         'GWG', 'On-Ice PP GF', 'On-Ice SH GF', 'On-Ice EV GF', 'On-Ice EV GF%',
+         'ENG', '1g', 'SHG/60', 'PPG/60', 'PP GF/60')
+
+X.ind <- X %>% select(-all_of(dep))
 
 # forward selection performed works for 90 even with dependencies *doublecheck later*
-step.forward <- regsubsets( P~., data=X, method="forward", nvmax=90 )
+step.forward <- regsubsets( G~., data=X.ind, method="forward", nvmax = 78)
 step.forward.sum <- summary(step.forward)
 
 # formulas for determining best model with many variables
 adjusted.fits <- as.data.frame( cbind( Rsqr = step.forward.sum$rsq, adjRsqr = step.forward.sum$adjr2, 
                                       bic = step.forward.sum$bic, cp = step.forward.sum$cp ) )
-
-write.csv(adjusted.fits, '~/Desktop/hockey/data/forward-results.csv')
 
 # both r squared values are useless in this case due to amount of variables get rid
 best.models <- apply( adjusted.fits[3:4], 2, which.min )
@@ -38,7 +42,39 @@ names(best.bic)[1] <- "value"
 best.cp <- as.data.frame( coef( step.forward.sum$obj, best.models[2] ) )
 names(best.cp)[1] <- "value"
 
+set.seed(1)
+k = 10
+folds = sample(1:k, nrow(X.ind), replace=TRUE)
+cv.errors = matrix(NA, k, 77, dimnames=list(NULL,c(1:77)))
 
+for (j in 1:k){
+  best.fit = regsubsets(G ~., data=X.ind[folds!=j,], nvmax=77,method="forward")
+  testmat = model.matrix(G ~., data = X.ind[folds==j,])
+  for (i in 1:77){
+    coefi = coef(best.fit, id=i)
+    xvars = names(coefi)
+    pred = testmat[,xvars]%*%coefi
+    cv.errors[j,i] = mean((X.ind$G[folds==j]-pred)^2)
+  }
+}
+msep <- apply(cv.errors,2,mean)
+number.variables <- which.min(msep)
+msep.min <- min(msep)
+
+best.fit <- regsubsets(G ~., data=X.ind, nvmax=number.variables,method="forward")
+final.variables <- coef(best.fit,id=number.variables)
+
+xvars = names(final.variables)
+testmat <- model.matrix(G ~., data=X.ind)
+Xmat <- testmat[,xvars]
+
+G.hat <- Xmat%*%final.variables
+msep2 <- mean((G.hat-X.ind$G)^2)
+
+resid <- X.ind$G - G.hat
+
+plot(G.hat, resid, pch=20, cex=0.5, axes = TRUE, xlab = "Fitted Values", ylab="Residuals")
+abline(h=0,col='red',lwd=2)
 
 
 
