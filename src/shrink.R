@@ -55,7 +55,19 @@ lasso.coef <- predict(lasso.full, s=lambda.min, type="coefficients")
 testmat <- model.matrix(G~., data=X.ind)
 G.hat <- testmat%*%lasso.coef
 msep.lasso <- mean((G.hat-X.ind$G)^2)
+
+# extract the sparse matrix elinating the . entries
 lass.coef.tibble<- tibble(name = lasso.coef@Dimnames[[1]][lasso.coef@i + 1], coefficient = lasso.coef@x)
+lass.coef.tibble$name<- lass.coef.tibble$name %>% str_replace_all("`", "")
+
+
+X.pred.lasso <- cbind(X.ind$G, X.ind %>% select(lass.coef.tibble$name[-1]))
+names(X.pred.lasso)[1] <- 'G'
+
+fit <- lm(G~., data=X.pred.lasso)
+plot(fit,cex=0.5,which=1)
+
+
 
 
 
