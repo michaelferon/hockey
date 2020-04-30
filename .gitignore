@@ -9,6 +9,7 @@
 !data/clean/*.csv
 !data/class-subset-vars.csv
 !data/class-subset-data.csv
+!data/class-subset-full.csv
 
 .Rdata
 .Rhistory

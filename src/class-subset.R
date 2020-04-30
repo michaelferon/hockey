@@ -110,3 +110,19 @@ out_data <- data.frame(rates = all_rates)
 
 write.csv(out_vars, file = '../data/class-subset-vars.csv')
 write.csv(out_data, file = '../data/class-subset-data.csv')
+
+## TEST
+test <- tibble(.rows = 89)
+test[[1]] <- as.character(NA)
+test[[2]] <- as.character(NA)
+test[[2]][1:2] <- c('EV FO', 'BkS/60')
+for (i in 3:length(cv_vars)) {
+  test[[i]] <- as.character(NA)
+  test[[i]][1:length(cv_vars[[i]])] <- cv_vars[[i]]
+}
+
+write.csv(test, file = '../data/class-subset-full.csv')
+
+
+
+
