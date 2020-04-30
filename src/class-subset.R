@@ -21,6 +21,10 @@ load('../data/bio.Rdata')
 dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
          'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
          'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2')
+dep <- c('P', 'SHG', 'SHP', 'FOL', 'EV FOL', 'PP FOL', 'SH FO', 'SH FOW',
+         'SH FOL', 'OZ FOL', 'NZ FOL', 'DZ FO', 'DZ FOW', 'DZ FOL',
+         'On-Ice EV GD', 'ENP', 'MsS Cross', 'Net Pen', 'G Msct', 'SHA', 'SHA2',
+         'PPA', 'PPA2')
 
 dc <- df %>%
   .[, !(names(df) %in% dep)] %>%
@@ -47,10 +51,11 @@ prior <- tapply(data$Pos, data$Pos, function(x) length(x) / n) %>%
   as.numeric
 
 vars <- names(data)[-1]
-# set <- subsets(length(vars), 2, vars)
-# rates <- c()
-# 
+set <- subsets(length(vars), 2, vars)
+rates <- c()
+
 # for (j in 1:(dim(set)[1])) {
+#   print(j)
 #   confuse <- matrix(rep(0, g^2), nrow = g)
 #   temp <- data %>% dplyr::select(c('Pos', set[j, ]))
 #   for (i in 1:k) {
@@ -62,16 +67,19 @@ vars <- names(data)[-1]
 #   rate <- 1 - sum(diag(confuse)) / sum(confuse)
 #   rates <- c(rates, rate)
 # }
+# 
+# start_vars <- set[which.min(rates), ]
 
-m <- 91
+m <- ncol(data) - 1
 all_rates <- c(1, 1)
 cv_vars <- vector(mode = 'list', length = m)
 cv_vars[[1]] <- NULL; cv_vars[[2]] <- NULL
 
 
-start_vars <- c('EV FOL', 'BkS/60')
+start_vars <- c('EV FO', 'BkS/60')
 
 for (j in 3:m) {
+  print(j)
   next_vars <- vars[!(vars %in% start_vars)]
   rates <- c()
   for (var in next_vars) {

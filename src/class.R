@@ -16,6 +16,7 @@ load('../data/bio.Rdata')
 ## INFO
 # df -- this is the complete dataset, unstandardized.
 # ds -- same as df, but standardized.
+rm(ds)
 
 
 dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
