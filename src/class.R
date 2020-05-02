@@ -15,13 +15,13 @@ load('../data/bio.Rdata')
 
 ## INFO
 # df -- this is the complete dataset, unstandardized.
-# ds -- same as df, but standardized.
 rm(ds)
 
 
-dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
-         'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
-         'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2')
+dep <- c('P', 'SHG', 'SHP', 'FOL', 'EV FOL', 'PP FOL', 'SH FO', 'SH FOW',
+         'SH FOL', 'OZ FOL', 'NZ FOL', 'DZ FO', 'DZ FOW', 'DZ FOL',
+         'On-Ice EV GD', 'ENP', 'MsS Cross', 'Net Pen', 'G Msct', 'SHA', 'SHA2',
+         'PPA', 'PPA2')
 
 dc <- df %>%
   .[, !(names(df) %in% dep)] %>%
@@ -30,6 +30,7 @@ dc <- df %>%
 dc$Pos <- as.factor(dc$Pos)
 dc$Ntnlty <- as.factor(dc$Ntnlty)
 dc$`S/C` <- as.factor(dc$`S/C`)
+
 
 
 ### DISCRIMINANT ANALYSIS
@@ -42,6 +43,7 @@ my.da <- function(data, var, type = 'lda', priors = NULL) {
   
   g <- length(unique(data[[var]]))
   confuse <- matrix(rep(0, g^2), nrow = g)
+  pred <- as.character(rep(0, n))
   if (is.null(priors)) {
     priors <- tapply(data[[var]], data[[var]], function(x) length(x) / n) %>%
              as.numeric
@@ -59,11 +61,12 @@ my.da <- function(data, var, type = 'lda', priors = NULL) {
     }
     ppcv <- predict(zcv, data[fold == i, 2:p])
     confuse <- confuse + table(data[fold == i, var], ppcv$class)
+    pred[fold == i] <- ppcv$class
   }
   rate <- 1 - sum(diag(confuse)) / sum(confuse)
   rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
   
-  return(list(confuse = confuse, rate = rate, rates = rates))
+  return(list(confuse = confuse, rate = rate, rates = rates, pred = pred))
 }
 
 
@@ -104,7 +107,7 @@ my.log <- function(data, var) {
   
   g <- length(unique(data[[var]]))
   confuse <- matrix(rep(0, g^2), nrow = g)
-  
+  pred <- as.character(rep(0, n))
   for (i in 1:k) {
     lr <- multinom(data[fold != i, var] ~ ., data[fold != i, 2:p],
                    trace = FALSE) %>% summary
@@ -113,6 +116,7 @@ my.log <- function(data, var) {
       t %>% cbind(0, .)
     class <- apply(logodds, 1, which.max)
     confuse <- confuse + table(data[fold == i, var], class)
+    pred[fold == i] <- class
   }
   rate <- 1 - sum(diag(confuse)) / sum(confuse)
   rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
@@ -135,6 +139,7 @@ my.log.sc <- function(data) {
   fold <- sample(k, n, replace = TRUE)
   
   confuse <- matrix(rep(0, 4), nrow = 2)
+  pred <- as.character(rep(0, n))
   for(i in 1:k) {
     model <- data %>% .[fold != i, ] %>%
       glm(`S/C` ~ ., data = ., family = binomial)
@@ -142,6 +147,7 @@ my.log.sc <- function(data) {
       (data %>% select(-1) %>% .[fold == i, ] %>% as.matrix %>% t) %>%
       as.numeric
     confuse <- confuse + table(dc$`S/C`[fold == i], logit >= 0)
+    pred[fold == i] <- logit >= 0
   }
   rate <- 1 - sum(diag(confuse)) / sum(confuse)
   rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
