@@ -6,15 +6,23 @@ rm( list = ls() )
 library(tidyverse)
 library(lubridate)
 library(leaps)
+library(latex2exp)
 
-# Load `df` and `ds`.
+# Load `data` 
 load('../data/newData.Rdata')
-# df -- this is the complete dataset, unstandardized.
-# ds -- same as df, but standardized.
 
+# X.ind is all the quantitative data and standardized
+X.ind <- as_tibble(data %>% select( -c(1, 3:5) ) %>% scale())
 
-# X is all the quantitative data, due to causing linear dependencies
-X.ind <- data %>% select( -c(1, 3:5) )
+# start by fitting a simple linear model
+simple.model <- lm(Salary ~ ., data = X.ind)
+
+pdf(file="../plots/resid_simp_linear.pdf", bg="transparent", height=5)
+plot(simple.model$fitted.values, simple.model$residuals, pch=20, cex=0.75,
+     xlab=TeX("Fitted Values"), ylab = TeX("Residuals"))
+text(2.5,1.5, TeX(sprintf("$R^2 = %.3f", summary(simple.model)$r.squared)), cex=0.85, col='red')
+abline( h = 0, col = 'black', lwd = 1 )
+dev.off()
 
 num.features <- length( names(X.ind) ) - 1
 
@@ -26,17 +34,20 @@ step.forward.sum <- summary(step.forward)
 adjusted.fits <- as.data.frame( cbind( Rsqr = step.forward.sum$rsq, adjRsqr = step.forward.sum$adjr2, 
                                       bic = step.forward.sum$bic, cp = step.forward.sum$cp ) )
 
-# r squared value useless in this case due to amount of variables get rid
-best.models <- apply( adjusted.fits[2:4], 2, which.min )
+best.models <- as.data.frame(t(c(apply(adjusted.fits[1:2], 2, which.max), apply( adjusted.fits[3:4], 2, which.min ))))
+names(best.models) <- c('Rsqr', 'adjRsqr', 'bic', 'cp')
 
 # best model determined by bic, which usually produces a small model (penalty on more variables)
-best.bic <- as.data.frame( coef( step.forward.sum$obj, best.models[1] ) )
+best.bic <- as.data.frame( coef( step.forward.sum$obj, best.models$bic ) )
 names(best.bic)[1] <- "value"
+row.names(best.bic) <- str_replace_all(row.names(best.bic),"`", "")
 
 #best model determined by cp values
-best.cp <- as.data.frame( coef( step.forward.sum$obj, best.models[2] ) )
+best.cp <- as.data.frame( coef( step.forward.sum$obj, best.models$cp ) )
 names(best.cp)[1] <- "value"
+row.names(best.cp) <- str_replace_all(row.names(best.cp),"`", "")
 
+# k fold cross validation with forward selection
 set.seed(1)
 k = 10
 folds = sample( 1:k, nrow(X.ind), replace=TRUE )
