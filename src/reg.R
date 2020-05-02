@@ -54,7 +54,7 @@ folds = sample( 1:k, nrow(X.ind), replace=TRUE )
 cv.errors = matrix( NA, k, num.features, dimnames = list( NULL,c(1:num.features) ) )
 
 for (j in 1:k){
-  best.fit = regsubsets( Salary ~., data=X.ind[folds!=j,], nvmax=num.features,method="forward" )
+  best.fit = regsubsets( Salary ~., data=X.ind[folds!=j,], nvmax=num.features, method="forward" )
   testmat = model.matrix( Salary ~., data = X.ind[folds==j,] )
   for (i in 1:num.features){
     coefi = coef( best.fit, id=i )
