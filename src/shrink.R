@@ -59,7 +59,7 @@ names(X.pred.lasso)[1] <- 'Salary'
 fit <- lm(Salary ~ ., data=X.pred.lasso)
 
 pdf(file = '../plots/shrinkage/resid_LASSO.pdf', height = 6.5, width = 8.0)
-plot(fit, pch=19, cex=0.5, which=1, xlab = "Fitted Values", ylab = "Residuals")
+plot(fit, pch=19, cex=0.5, which=1)
 dev.off()
 
 pdf(file = '../plots/shrinkage/normQQ_LASSO.pdf', height = 6.5, width = 8.0)
