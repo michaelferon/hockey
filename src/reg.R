@@ -28,7 +28,7 @@ num.features <- length( names(X.ind) ) - 1
 
 # forward selection performed works for 90 even with dependencies *doublecheck later*
 step.forward <- regsubsets( Salary ~ ., data = X.ind, method = "forward", nvmax = num.features )
-step.forward.sum <- summary(step.forward, )
+step.forward.sum <- summary(step.forward)
 
 # formulas for determining best model with many variables
 adjusted.fits <- as.data.frame( cbind( Rsqr = step.forward.sum$rsq, adjRsqr = step.forward.sum$adjr2, 
@@ -79,7 +79,16 @@ msep2 <- mean( (Salary.hat-X.ind$Salary)^2 )
 
 resid <- X.ind$Salary - Salary.hat
 
-pdf(file = '../figures/regression/forward-selection-resids.pdf', height = 6.5, width = 8.0)
 plot( Salary.hat, resid, pch = 20, cex = 0.5, axes = TRUE, xlab = "Fitted Values", ylab = "Residuals" )
 abline( h = 0, col = 'red', lwd = 2 )
-dev.off()
+
+
+
+
+
+
+
+
+
+
+
