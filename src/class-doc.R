@@ -6,6 +6,7 @@ rm( list = ls() )
 library(ggplot2)
 library(lubridate)
 library(readr)
+library(tidyr)
 library(MASS)
 library(nnet)
 library(class)
@@ -17,9 +18,10 @@ library(dplyr)
 # Load data.
 load('../data/data.Rdata')
 rm(ds)
-dep <- c('P', 'SHG', 'SHP', 'FO', 'EV FO', 'PP FO', 'SH FO', 'SH FOW', 'SH FOL',
-         'OZ FO', 'NZ FO', 'DZ FO', 'On-Ice EV GD', 'ENP', 'Net Pen',
-         'Net Pen/60', 'G Msct', 'SHA', 'SHA2', 'PPA', 'PPA2')
+dep <- c('P', 'SHG', 'SHP', 'FOL', 'EV FOL', 'PP FOL', 'SH FO', 'SH FOW',
+         'SH FOL', 'OZ FOL', 'NZ FOL', 'DZ FO', 'DZ FOW', 'DZ FOL',
+         'On-Ice EV GD', 'ENP', 'MsS Cross', 'Net Pen', 'G Msct', 'SHA', 'SHA2',
+         'PPA', 'PPA2')
 data <- df %>%
   .[, !(names(df) %in% dep)] %>%
   select(-c(1:2, 5:7, 9:11)) %>%
@@ -127,7 +129,7 @@ dev.off()
 
 thing <- data %>% select(-c('S/C', 'Ntnlty'))
 thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
-thing <- thing %>% do.knn(k = 16)
+thing <- thing %>% do.knn(k = which.min(pos.knn.scaled$rates)) # or 23, 29
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -226,7 +228,7 @@ dev.off()
 
 thing <- data %>% select(-c('S/C', 'Ntnlty'))
 thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
-thing <- thing %>% do.knn(k = which.min(pos.knn.scaled.adj$rates))
+thing <- thing %>% do.knn(k = 32) # which.min = 37
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -241,6 +243,46 @@ temp %>% specificity(truth = truth, estimate = estimate)
 ### Subset selection.
 rates <- read_csv('../data/class-subset-data.csv') %>%
   .$rates
+rates[1] <- NA
+rates[2] <- NA
+pdf(file='../plots/class/subset-cv.pdf', bg='transparent', height=5)
+plot(1:length(rates), rates, pch=20, cex=0.75,
+     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+lines(rates, lwd = 0.75)
+dev.off()
+
+vars <- read_csv('../data/class-subset-vars.csv') %>%
+  .$vars
+
+df <- data %>%
+  .[, names(.) %in% c(vars[1:2], 'Pos')]
+priors <- tapply(df$Pos, df$Pos, function(x) length(x) / nrow(df)) %>%
+  as.numeric
+model <- lda(Pos ~ ., data = df, prior = priors)
+df$pred <- predict(model, df[, -1])$class
+
+xstart <- min(df$`EV FO`); xend <- max(df$`EV FO`); xlen <- xend - xstart
+ystart <- min(df$`BkS/60`); yend <- max(df$`BkS/60`); ylen <- yend - ystart
+mesh <- expand_grid(
+  `EV FO` = seq(xstart - 0.05*xlen, xend + 0.05*xlen, by = 0.05),
+  `BkS/60` = seq(ystart - 0.05*ylen, yend + 0.05*ylen, by = 0.05)
+)
+mesh$pred <- predict(model, mesh)$class
+
+pdf(file = '../plots/class/viz.pdf', height = 4.8, width = 8)
+ggplot(mesh, aes(`EV FO`, `BkS/60`, fill = pred)) +
+  geom_raster(alpha = 0.25) +
+  geom_point(data = df, aes(`EV FO`, `BkS/60`, color = Pos), size = 0.25) +
+  labs(fill = 'Position') + guides(color = FALSE) +
+  scale_fill_discrete(labels = c('Center', 'Defense', 'Forward')) +
+  xlab('Even Strength Faceoffs') + ylab('Blocked Shots per 60 Minutes') +
+  theme_minimal()
+dev.off()
+
+
+
+
+
 
 
 
@@ -292,7 +334,7 @@ dev.off()
 
 thing <- data %>%
   select(-c('Pos', 'Ntnlty')) %>%
-  do.knn(k = 32)
+  do.knn(k = which.min(sc.knn$rates)) # anything >= 34
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
