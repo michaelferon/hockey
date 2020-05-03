@@ -67,7 +67,7 @@ plot(fit, which = 2)
 dev.off()
 
 
-
+save(df, X.pred.lasso, file = '../data/dataLASSO.Rdata')
 
 
 
