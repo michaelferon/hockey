@@ -57,13 +57,17 @@ X.pred.lasso <- cbind(X.ind$Salary, X.ind %>% select(lass.coef.tibble$name[-1]))
 names(X.pred.lasso)[1] <- 'Salary'
 
 fit <- lm(Salary ~ ., data=X.pred.lasso)
-plot(fit,pch=19,cex=0.5,which=1)
+
+pdf(file = '../plots/shrinkage/resid_LASSO.pdf', height = 6.5, width = 8.0)
+plot(fit, pch=19, cex=0.5, which=1)
+dev.off()
+
+pdf(file = '../plots/shrinkage/normQQ_LASSO.pdf', height = 6.5, width = 8.0)
+plot(fit, which = 2)
+dev.off()
 
 
-
-
-
-
+save(df, X.pred.lasso, file = '../data/dataLASSO.Rdata')
 
 
 
