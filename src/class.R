@@ -43,7 +43,7 @@ my.da <- function(data, var, type = 'lda', priors = NULL) {
   
   g <- length(unique(data[[var]]))
   confuse <- matrix(rep(0, g^2), nrow = g)
-  pred <- as.character(rep(0, n))
+  pred <- data[[1]]
   if (is.null(priors)) {
     priors <- tapply(data[[var]], data[[var]], function(x) length(x) / n) %>%
              as.numeric
@@ -121,7 +121,7 @@ my.log <- function(data, var) {
   rate <- 1 - sum(diag(confuse)) / sum(confuse)
   rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
   
-  return(list(confuse = confuse, rate = rate, rates = rates))
+  return(list(confuse = confuse, rate = rate, rates = rates, pred = pred))
 }
 
 
@@ -153,7 +153,7 @@ my.log.sc <- function(data) {
   rates <- 1 - diag(confuse) / apply(confuse, 2, sum)
   colnames(confuse) <- c('L', 'R')
   
-  return(list(confuse = confuse, rate = rate, rates = rates))
+  return(list(confuse = confuse, rate = rate, rates = rates, pred = pred))
 }
 
 sc.log <- dc %>% select(-c('Pos', 'Ntnlty')) %>% my.log.sc
