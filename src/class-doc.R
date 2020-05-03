@@ -1,9 +1,11 @@
 rm( list = ls() )
 
 # Make sure you're in the 'src' directory.
+#HEY.
 
 library(ggplot2)
 library(lubridate)
+library(readr)
 library(MASS)
 library(nnet)
 library(class)
@@ -139,10 +141,10 @@ ylim <- c(min(c(pos.knn$rates, pos.knn.scaled$rates)),
           max(c(pos.knn$rates, pos.knn.scaled$rates)))
 pdf(file='../plots/class/pos-knn-comp.pdf', bg='transparent', height=4, width=10)
 par(mfrow = c(1, 2))
-plot(1:50, pos.knn$rates, pch=20, cex=0.75, main='Un-scaled', ylim=ylim,
+plot(1:50, pos.knn$rates, pch=20, cex=0.75, main='Un-standardized', ylim=ylim,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn$rates, lwd = 0.75)
-plot(1:50, pos.knn.scaled$rates, pch=20, cex=0.75, main='Scaled', ylim=ylim,
+plot(1:50, pos.knn.scaled$rates, pch=20, cex=0.75, main='Standardized', ylim=ylim,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn.scaled$rates, lwd = 0.75)
 dev.off()
@@ -236,6 +238,104 @@ temp %>% specificity(truth = truth, estimate = estimate)
 
 
 
+### Subset selection.
+rates <- read_csv('../data/class-subset-data.csv') %>%
+  .$rates
+
+
+
+
+### Shoots/catches.
+## LDA.
+temp <- tibble(
+  truth = data$`S/C`,
+  estimate = sc.lda$pred
+)
+temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
+sc.lda$rate
+sc.lda$rates
+temp %>% accuracy(truth = truth, estimate = estimate)
+temp %>% sensitivity(truth = truth, estimate = estimate)
+temp %>% specificity(truth = truth, estimate = estimate)
+
+## QDA.
+temp$estimate <- sc.qda$pred
+temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
+sc.qda$rate
+sc.qda$rates
+temp %>% accuracy(truth = truth, estimate = estimate)
+temp %>% sensitivity(truth = truth, estimate = estimate)
+temp %>% specificity(truth = truth, estimate = estimate)
+
+## Logistic.
+sc.log$pred[sc.log$pred == 'TRUE'] <- 'R'
+sc.log$pred[sc.log$pred == 'FALSE'] <- 'L'
+temp$estimate <- sc.log$pred %>% as.factor
+temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
+sc.log$rate
+sc.log$rates
+temp %>% accuracy(truth = truth, estimate = estimate)
+temp %>% sensitivity(truth = truth, estimate = estimate)
+temp %>% specificity(truth = truth, estimate = estimate)
+
+## KNN.
+pdf(file='../plots/class/sc-knn-rates.pdf', bg='transparent', height=5)
+plot(1:50, sc.knn$rates, pch=20, cex=0.75,
+     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+lines(sc.knn$rates, lwd = 0.75)
+dev.off()
+pdf(file='../plots/class/sc-knn-se.pdf', bg='transparent', height=5)
+plot(1:50, sc.knn$se, pch=20, cex=0.75,
+     xlab=TeX('k'), ylab = TeX('Standard error'))
+lines(sc.knn$se, lwd = 0.75)
+dev.off()
+
+thing <- data %>%
+  select(-c('Pos', 'Ntnlty')) %>%
+  do.knn(k = 32)
+temp$estimate <- thing$pred
+temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
+thing$rate
+thing$rates
+temp %>% accuracy(truth = truth, estimate = estimate)
+temp %>% sensitivity(truth = truth, estimate = estimate)
+temp %>% specificity(truth = truth, estimate = estimate)
+
+## KNN scaled.
+pdf(file='../plots/class/sc-knn-scaled-rates.pdf', bg='transparent', height=5)
+plot(1:50, sc.knn.scaled$rates, pch=20, cex=0.75,
+     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+lines(sc.knn.scaled$rates, lwd = 0.75)
+dev.off()
+pdf(file='../plots/class/sc-knn-scaled-se.pdf', bg='transparent', height=5)
+plot(1:50, sc.knn.scaled$se, pch=20, cex=0.75,
+     xlab=TeX('k'), ylab = TeX('Standard error'))
+lines(sc.knn.scaled$se, lwd = 0.75)
+dev.off()
+
+thing <- data %>% select(-c('Pos', 'Ntnlty'))
+thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
+thing <- thing %>% do.knn(k = which.min(sc.knn.scaled$rates))
+temp$estimate <- thing$pred
+temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
+thing$rate
+thing$rates
+temp %>% accuracy(truth = truth, estimate = estimate)
+temp %>% sensitivity(truth = truth, estimate = estimate)
+temp %>% specificity(truth = truth, estimate = estimate)
+
+## KNN comparison.
+ylim <- c(min(c(sc.knn$rates, sc.knn.scaled$rates)),
+          max(c(sc.knn$rates, sc.knn.scaled$rates)))
+pdf(file='../plots/class/sc-knn-comp.pdf', bg='transparent', height=4, width=10)
+par(mfrow = c(1, 2))
+plot(1:50, sc.knn$rates, pch=20, cex=0.75, main='Un-standardized', ylim=ylim,
+     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+lines(sc.knn$rates, lwd = 0.75)
+plot(1:50, sc.knn.scaled$rates, pch=20, cex=0.75, main='Standardized', ylim=ylim,
+     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+lines(sc.knn.scaled$rates, lwd = 0.75)
+dev.off()
 
 
 
