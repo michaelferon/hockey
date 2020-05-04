@@ -93,12 +93,12 @@ temp %>% sensitivity(truth = truth, estimate = estimate)
 temp %>% specificity(truth = truth, estimate = estimate)
 
 ## KNN.
-pdf(file='../plots/class/pos-knn-rates.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-rates.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn$rates, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn$rates, lwd = 0.75)
 dev.off()
-pdf(file='../plots/class/pos-knn-se.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-se.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn$se, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Standard error'))
 lines(pos.knn$se, lwd = 0.75)
@@ -116,12 +116,12 @@ temp %>% sensitivity(truth = truth, estimate = estimate)
 temp %>% specificity(truth = truth, estimate = estimate)
 
 ## KNN scaled.
-pdf(file='../plots/class/pos-knn-scaled-rates.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-scaled-rates.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.scaled$rates, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn.scaled$rates, lwd = 0.75)
 dev.off()
-pdf(file='../plots/class/pos-knn-scaled-se.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-scaled-se.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.scaled$se, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Standard error'))
 lines(pos.knn.scaled$se, lwd = 0.75)
@@ -192,12 +192,12 @@ temp %>% sensitivity(truth = truth, estimate = estimate)
 temp %>% specificity(truth = truth, estimate = estimate)
 
 ## KNN.
-pdf(file='../plots/class/pos-knn-adj-rates.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-adj-rates.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.adj$rates, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn.adj$rates, lwd = 0.75)
 dev.off()
-pdf(file='../plots/class/pos-knn-adj-se.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-adj-se.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.adj$se, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Standard error'))
 lines(pos.knn.adj$se, lwd = 0.75)
@@ -215,12 +215,12 @@ temp %>% sensitivity(truth = truth, estimate = estimate)
 temp %>% specificity(truth = truth, estimate = estimate)
 
 ## KNN scaled.
-pdf(file='../plots/class/pos-knn-scaled-adj-rates.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-scaled-adj-rates.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.scaled.adj$rates, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Misclassification rate'))
 lines(pos.knn.scaled.adj$rates, lwd = 0.75)
 dev.off()
-pdf(file='../plots/class/pos-knn-scaled-adj-se.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/pos-knn-scaled-adj-se.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:50, pos.knn.scaled.adj$se, pch=20, cex=0.75,
      xlab=TeX('k'), ylab = TeX('Standard error'))
 lines(pos.knn.scaled.adj$se, lwd = 0.75)
@@ -245,9 +245,9 @@ rates <- read_csv('../data/class-subset-data.csv') %>%
   .$rates
 rates[1] <- NA
 rates[2] <- NA
-pdf(file='../plots/class/subset-cv.pdf', bg='transparent', height=5)
+pdf(file='../plots/class/subset-cv.pdf', bg='transparent', height=4.8, width = 6)
 plot(1:length(rates), rates, pch=20, cex=0.75,
-     xlab=TeX('k'), ylab = TeX('Misclassification rate'))
+     xlab=TeX('Subset Size'), ylab = TeX('Misclassification rate'))
 lines(rates, lwd = 0.75)
 dev.off()
 
@@ -269,10 +269,10 @@ mesh <- expand_grid(
 )
 mesh$pred <- predict(model, mesh)$class
 
-pdf(file = '../plots/class/viz.pdf', height = 4.8, width = 8)
+pdf(file = '../plots/class/viz.pdf', height = 3.5, width = 7)
 ggplot(mesh, aes(`EV FO`, `BkS/60`, fill = pred)) +
   geom_raster(alpha = 0.25) +
-  geom_point(data = df, aes(`EV FO`, `BkS/60`, color = Pos), size = 0.25) +
+  geom_point(data = df, aes(`EV FO`, `BkS/60`, color = Pos), size = 0.6) +
   labs(fill = 'Position') + guides(color = FALSE) +
   scale_fill_discrete(labels = c('Center', 'Defense', 'Forward')) +
   xlab('Even Strength Faceoffs') + ylab('Blocked Shots per 60 Minutes') +
