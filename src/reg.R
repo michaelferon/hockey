@@ -35,8 +35,8 @@ dev.off()
 
 # Q-Q plot
 pdf(file="../plots/regression/qqplot_simp_linear.pdf", bg="transparent", width=6, height=4.8)
-qqplot(X.ind$Salary, simple.model$fitted.values, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"))
-qqline(X.ind$Salary, simple.model$fitted.values, lty=3, col='seashell4')
+qqnorm(simple.model$residuals, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"), main="")
+qqline(simple.model$residuals, lty=3, col='seashell4')
 dev.off()
 
 num.features <- length( names(X.ind) ) - 1
@@ -63,32 +63,35 @@ names(best.cp)[1] <- "value"
 row.names(best.cp) <- str_replace_all(row.names(best.cp),"`", "")
 
 # gather data based only on the variables bic chose
-X.bic <- X.ind %>% select(row.names(best.bic)[-1])
+X.bic <- cbind(X.ind$Salary, X.ind %>% select(row.names(best.bic)[-1]))
+names(X.bic)[1] <- 'Salary'
 
-fitted.bic <- lm(X.ind$Salary ~ ., data=X.bic)$fitted.values
+fit.bic <- lm(Salary~., data=X.bic)
+resid.bic <- fit.bic$residuals
+adjr2.bic <- summary(fit.bic)$adj.r.squared
+Salary.bic <- fit.bic$fitted.values
 
 # plot of residuals vs. fitted 
 pdf(file="../plots/regression/resid_forwd_bic.pdf", bg="transparent", width=6, height=4.8)
-plot(simple.model$fitted.values, simple.model$residuals, pch=20, cex=0.75,
+plot(Salary.bic, resid.bic, pch=20, cex=0.75,
      xlab=TeX("Fitted Values"), ylab = TeX("Residuals"))
-text(2.5,1.6, TeX(sprintf("Adj. $R^2 = %.3f", step.forward.sum$adjr2[best.models$bic])), cex=0.85)
+text(2,1.6, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.bic)), cex=0.85)
 abline( h = 0, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
 # plot of actual vs. fitted
 pdf(file="../plots/regression/actVSfit_forwd_bic.pdf", bg="transparent", width=6, height=4.8)
-plot(fitted.bic, X.ind$Salary, pch=20, cex=0.75,
+plot(Salary.bic, X.ind$Salary, pch=20, cex=0.75,
      xlab=TeX("Fitted Values"), ylab = TeX("Actual Values"))
-text(2,-0.5, TeX(sprintf("Adj. $R^2 = %.3f", step.forward.sum$adjr2[best.models$bic])), cex=0.85)
+text(2,-0.5, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.bic)), cex=0.85)
 abline( a=0,b=1, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
 # Q-Q plot
 pdf(file="../plots/regression/qqplot_forwd_bic.pdf", bg="transparent", width=6, height=4.8)
-qqplot(X.ind$Salary, fitted.bic, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"))
-qqline(X.ind$Salary, fitted.bic, lty=3, col='seashell4')
+qqnorm(resid.bic, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"), main="")
+qqline(resid.bic, lty=3, col='seashell4')
 dev.off()
-
 
 # k fold cross validation with forward selection
 set.seed(1)
@@ -114,37 +117,35 @@ best.fit <- regsubsets( Salary ~., data = X.ind, nvmax = number.variables, metho
 best.kfold <- as.matrix(coef( best.fit,id=number.variables ))
 names(best.kfold)[1] <- "value"
 
-xvars = rownames(best.kfold)
-testmat <- as.matrix(model.matrix( Salary ~., data=X.ind ))
-Xmat <- as.matrix(testmat[,xvars])
+rownames(best.kfold) <- rownames(best.kfold) %>% str_replace_all("`", "")
+X.kfold <- cbind(X.ind$Salary, X.ind %>% select(rownames(best.kfold)[-1]))
+names(X.kfold)[1] <- 'Salary'
 
-Salary.hat <- Xmat %*% best.kfold
-msep2 <- mean( (Salary.hat-X.ind$Salary)^2 )
-
-resid <- X.ind$Salary - Salary.hat
-
-adjr2.kfol <- summary(lm(X.ind$Salary ~ ., data = as.data.frame(Xmat[,-1])))$adj.r.squared
+fit.kfold <- lm(Salary~., data=X.kfold)
+resid.kfold <- fit.kfold$residuals
+adjr2.kfold <- summary(fit.kfold)$adj.r.squared
+Salary.kfold <- fit.kfold$fitted.values
 
 # plot of residuals vs. fitted 
 pdf(file="../plots/regression/resid_forwd_kfold.pdf", bg="transparent", width=6, height=4.8)
-plot(Salary.hat, resid, pch=20, cex=0.75,
+plot(Salary.kfold, resid.kfold, pch=20, cex=0.75,
      xlab=TeX("Fitted Values"), ylab = TeX("Residuals"))
-text(2.5,1.6, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.kfol)), cex=0.85)
+text(2.5,1.6, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.kfold)), cex=0.85)
 abline( h = 0, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
 # plot of actual vs. fitted
 pdf(file="../plots/regression/actVSfit_kfold.pdf", bg="transparent", width=6, height=4.8)
-plot(Salary.hat, X.ind$Salary, pch=20, cex=0.75,
+plot(Salary.kfold, X.ind$Salary, pch=20, cex=0.75,
      xlab=TeX("Fitted Values"), ylab = TeX("Actual Values"))
-text(2,-0.5, TeX(sprintf("Adj. $R^2 = %.3f", step.forward.sum$adjr2[best.models$bic])), cex=0.85)
+text(2,-0.5, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.kfold)), cex=0.85)
 abline( a=0,b=1, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
 # Q-Q plot
 pdf(file="../plots/regression/qqplot_forwd_kfold.pdf", bg="transparent", width=6, height=4.8)
-qqplot(X.ind$Salary, Salary.hat, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"))
-qqline(X.ind$Salary, Salary.hat, lty=3, col='seashell4')
+qqnorm(resid.kfold, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"), main="")
+qqline(resid.kfold, lty=3, col='seashell4')
 dev.off()
 
 
