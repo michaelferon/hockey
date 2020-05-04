@@ -70,7 +70,7 @@ abline( h = 0, col = 'red', lwd = 1, lty='dashed' )
 dev.off()
 
 # plot of actual vs. fitted
-pdf(file="../plots/regression/actVSfit_forwd_bic.pdf", bg="transparent", width=4.8, height=4.8)
+pdf(file="../plots/regression/actVSfit_forwd_bic.pdf", bg="transparent", width=6, height=4.8)
 plot(fitted.bic, X.ind$Salary, pch=20, cex=0.75,
      xlab=TeX("Fitted Values"), ylab = TeX("Actual Values"))
 text(2,-0.5, TeX(sprintf("Adj. $R^2 = %.3f", step.forward.sum$adjr2[best.models$bic])), cex=0.85)
