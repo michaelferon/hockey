@@ -13,9 +13,8 @@ load('../data/newData.Rdata')
 # df -- this is the complete dataset, unstandardized.
 # ds -- same as df, but standardized.
 
-
 # X is all the quantitative data.
-X.ind <- data %>% select( -c(1, 3:5) )
+X.ind <- as_tibble(data %>% select( -c(1, 3:5) ) %>% scale())
 
 num.features <- length( names(X.ind) ) - 1
 
@@ -45,29 +44,41 @@ msep.min <- min(msep)
 lasso.full <- glmnet(x, y, alpha=1, lambda=grid)
 lasso.coef <- predict(lasso.full, s=lambda.min, type="coefficients")
 testmat <- model.matrix(Salary ~ ., data=X.ind)
-Salary.hat <- testmat %*% lasso.coef
+Salary.hat <- (testmat %*% lasso.coef)@x
 msep.lasso <- mean((Salary.hat-X.ind$Salary)^2)
 
 # extract the sparse matrix elinating the . entries
 lass.coef.tibble<- tibble(name = lasso.coef@Dimnames[[1]][lasso.coef@i + 1], coefficient = lasso.coef@x)
 lass.coef.tibble$name<- lass.coef.tibble$name %>% str_replace_all("`", "")
 
-
 X.pred.lasso <- cbind(X.ind$Salary, X.ind %>% select(lass.coef.tibble$name[-1]))
 names(X.pred.lasso)[1] <- 'Salary'
 
-fit <- lm(Salary ~ ., data=X.pred.lasso)
+resid <- X.ind$Salary - Salary.hat
 
-pdf(file = '../plots/shrinkage/resid_LASSO.pdf', height = 6.5, width = 8.0)
-plot(fit, pch=19, cex=0.5, which=1)
+adjr2.lasso <- summary(lm(Salary ~ ., data = X.pred.lasso))$adj.r.squared
+
+# plot of residuals vs. fitted 
+pdf(file="../plots/shrinkage/resid_lasso.pdf", bg="transparent", width=6, height=4.8)
+plot(Salary.hat, resid, pch=20, cex=0.75,
+     xlab=TeX("Fitted Values"), ylab = TeX("Residuals"))
+text(-0.7,-1.5, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.lasso)), cex=0.85)
+abline( h = 0, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
-pdf(file = '../plots/shrinkage/normQQ_LASSO.pdf', height = 6.5, width = 8.0)
-plot(fit, which = 2)
+# plot of actual vs. fitted
+pdf(file="../plots/shrinkage/actVSfit_lasso.pdf", bg="transparent", width=6, height=4.8)
+plot(Salary.hat, X.ind$Salary, pch=20, cex=0.75,
+     xlab=TeX("Fitted Values"), ylab = TeX("Actual Values"))
+text(-0.5,2.5, TeX(sprintf("Adj. $R^2 = %.3f", adjr2.lasso)), cex=0.85)
+abline( a=0,b=1, col = 'red', lwd = 1, lty=2 )
 dev.off()
 
-
-save(df, X.pred.lasso, file = '../data/dataLASSO.Rdata')
+#Q-Q plot
+pdf(file="../plots/shrinkage/qqplot_lasso.pdf", bg="transparent", width=6, height=4.8)
+qqplot(X.ind$Salary, Salary.hat, xlab=TeX("Theoretical Quantiles"), ylab=TeX("Standardized Residuals"))
+qqline(X.ind$Salary, Salary.hat, lty=3, col='seashell4')
+dev.off()
 
 
 
