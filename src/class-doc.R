@@ -36,7 +36,7 @@ load(file = '../data/class.Rdata')
 load(file = '../data/knn.Rdata')
 
 # For KNN.
-do.knn <- function(data, k) {
+my.knn <- function(data, k) {
   set.seed(1)
   c <- 10
   n <- nrow(data)
@@ -106,7 +106,7 @@ dev.off()
 
 thing <- data %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  do.knn(k = which.min(pos.knn$rates))
+  my.knn(k = which.min(pos.knn$rates))
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -129,7 +129,7 @@ dev.off()
 
 thing <- data %>% select(-c('S/C', 'Ntnlty'))
 thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
-thing <- thing %>% do.knn(k = which.min(pos.knn.scaled$rates)) # or 23, 29
+thing <- thing %>% my.knn(k = which.min(pos.knn.scaled$rates)) # or 23, 29
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -205,7 +205,7 @@ dev.off()
 
 thing <- data %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  do.knn(k = which.min(pos.knn.adj$rates))
+  my.knn(k = which.min(pos.knn.adj$rates))
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -228,7 +228,7 @@ dev.off()
 
 thing <- data %>% select(-c('S/C', 'Ntnlty'))
 thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
-thing <- thing %>% do.knn(k = 32) # which.min = 37
+thing <- thing %>% my.knn(k = 32) # which.min = 37
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -334,7 +334,7 @@ dev.off()
 
 thing <- data %>%
   select(-c('Pos', 'Ntnlty')) %>%
-  do.knn(k = which.min(sc.knn$rates)) # anything >= 34
+  my.knn(k = which.min(sc.knn$rates)) # anything >= 34
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate
@@ -357,7 +357,7 @@ dev.off()
 
 thing <- data %>% select(-c('Pos', 'Ntnlty'))
 thing[, 2:ncol(thing)] <- scale(thing[, 2:ncol(thing)])
-thing <- thing %>% do.knn(k = which.min(sc.knn.scaled$rates))
+thing <- thing %>% my.knn(k = which.min(sc.knn.scaled$rates))
 temp$estimate <- thing$pred
 temp %>% conf_mat(truth = truth, estimate = estimate) %>% .$table %>% t
 thing$rate

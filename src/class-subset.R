@@ -51,29 +51,26 @@ vars <- names(data)[-1]
 set <- subsets(length(vars), 2, vars)
 rates <- c()
 
-# for (j in 1:(dim(set)[1])) {
-#   print(j)
-#   confuse <- matrix(rep(0, g^2), nrow = g)
-#   temp <- data %>% dplyr::select(c('Pos', set[j, ]))
-#   for (i in 1:k) {
-#     zcv <- lda(formula = Pos~., data = temp[fold != i,],
-#                prior = prior)
-#     ppcv <- predict(zcv, temp[fold == i, 2:3])
-#     confuse <- confuse + table(temp[fold == i, 'Pos'], ppcv$class)
-#   }
-#   rate <- 1 - sum(diag(confuse)) / sum(confuse)
-#   rates <- c(rates, rate)
-# }
-# 
-# start_vars <- set[which.min(rates), ]
+for (j in 1:(dim(set)[1])) {
+  print(j)
+  confuse <- matrix(rep(0, g^2), nrow = g)
+  temp <- data %>% dplyr::select(c('Pos', set[j, ]))
+  for (i in 1:k) {
+    zcv <- lda(formula = Pos~., data = temp[fold != i,],
+               prior = prior)
+    ppcv <- predict(zcv, temp[fold == i, 2:3])
+    confuse <- confuse + table(temp[fold == i, 'Pos'], ppcv$class)
+  }
+  rate <- 1 - sum(diag(confuse)) / sum(confuse)
+  rates <- c(rates, rate)
+}
+
+start_vars <- set[which.min(rates), ]
 
 m <- ncol(data) - 1
 all_rates <- c(1, 1)
 cv_vars <- vector(mode = 'list', length = m)
 cv_vars[[1]] <- NULL; cv_vars[[2]] <- NULL
-
-
-start_vars <- c('EV FO', 'BkS/60')
 
 for (j in 3:m) {
   print(j)

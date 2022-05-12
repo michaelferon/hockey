@@ -35,7 +35,7 @@ dc$`S/C` <- as.factor(dc$`S/C`)
 
 
 
-my.knn <- function(data) {
+cv.knn <- function(data) {
   print(names(data[1]))
   set.seed(1)
   nk <- 50
@@ -67,7 +67,7 @@ my.knn <- function(data) {
 ## Position.
 pos.knn <- dc %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 ## Adjusted position.
 temp.dc <- dc %>%
@@ -76,17 +76,17 @@ temp.dc$Pos[temp.dc$Pos == 'L' | temp.dc$Pos == 'R'] <- 'F'
 temp.dc$Pos <- as.factor(temp.dc$Pos)
 pos.knn.adj <- temp.dc %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 ## Nationality.
 nty.knn <- dc %>%
   select(-c('S/C', 'Pos')) %>%
-  my.knn
+  cv.knn
 
 ## Shoots/catches.
 sc.knn <- dc %>%
   select(-c('Pos', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 
 
@@ -97,23 +97,23 @@ temp.dc[, 4:ncol(temp.dc)] <- scale(temp.dc[, 4:ncol(temp.dc)])
 ## Position.
 pos.knn.scaled <- dc %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 ## Adjusted position.
 pos.knn.scaled.adj <- temp.dc %>%
   select(-c('S/C', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 
 ## Nationality.
 nty.knn.scaled <- dc %>%
   select(-c('S/C', 'Pos')) %>%
-  my.knn
+  cv.knn
 
 ## Shoots/catches.
 sc.knn.scaled <- dc %>%
   select(-c('Pos', 'Ntnlty')) %>%
-  my.knn
+  cv.knn
 
 save(nty.knn, nty.knn.scaled, pos.knn, pos.knn.adj, pos.knn.scaled,
      pos.knn.scaled.adj, sc.knn, sc.knn.scaled,
